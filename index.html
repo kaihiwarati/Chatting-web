@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DualBot - Sweet 💕 • Rude ⚡</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Personality Tabs -->
+        <div class="personality-tabs">
+            <button class="tab-btn sweet-tab active" data-personality="sweet">
+                <span class="tab-emoji">💕</span>
+                <span class="tab-name">Sweet</span>
+                <span class="tab-desc">Caring Listener</span>
+            </button>
+            <button class="tab-btn rude-tab" data-personality="rude">
+                <span class="tab-emoji">⚡</span>
+                <span class="tab-name">Rude</span>
+                <span class="tab-desc">Reality Check</span>
+            </button>
+        </div>
+
+        <!-- Sweet Chat Panel -->
+        <div class="chat-panel sweet-panel active-panel" id="sweetPanel">
+            <div class="panel-header">
+                <div class="avatar">💕</div>
+                <div class="panel-info">
+                    <h3>Sweet Girl</h3>
+                    <p>I listen, I care, I support you</p>
+                </div>
+            </div>
+            <div class="chat-messages" id="sweetMessages">
+                <div class="message bot">
+                    <div class="message-content">Hey! I'm your Sweet companion 💕<br><br>Tell me what's on your mind. I'm here to listen and support you.<br><br>🌸 English • हिंदी • Hinglish - main sab mein baat kar sakti hoon!</div>
+                </div>
+            </div>
+            <div class="typing-indicator" id="sweetTyping">💕 <span></span><span></span><span></span></div>
+            <div class="input-area">
+                <input type="text" class="message-input" id="sweetInput" placeholder="Type in English, हिंदी, or Hinglish...">
+                <button class="send-btn" data-personality="sweet">Send</button>
+            </div>
+        </div>
+
+        <!-- Rude Chat Panel -->
+        <div class="chat-panel rude-panel" id="rudePanel">
+            <div class="panel-header">
+                <div class="avatar">⚡</div>
+                <div class="panel-info">
+                    <h3>Rude Reality</h3>
+                    <p>I give truth, no sugarcoating</p>
+                </div>
+            </div>
+            <div class="chat-messages" id="rudeMessages">
+                <div class="message bot">
+                    <div class="message-content">What now? ⚡<br><br>Don't expect sympathy. I'll tell you the truth you need to hear.<br><br>English • हिंदी • Hinglish - jo bhi bolo, sach sunn ke raho!</div>
+                </div>
+            </div>
+            <div class="typing-indicator" id="rudeTyping">⚡ <span></span><span></span><span></span></div>
+            <div class="input-area">
+                <input type="text" class="message-input" id="rudeInput" placeholder="Stop whining and type...">
+                <button class="send-btn" data-personality="rude">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
