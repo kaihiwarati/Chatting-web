@@ -22,11 +22,10 @@ app.use('/api/chat', limiter);
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 if (!OPENROUTER_API_KEY) {
-    console.error('❌ OPENROUTER_API_KEY not set in .env file');
-    process.exit(1);
+    console.warn('⚠️ OPENROUTER_API_KEY not set');
 }
 
-// Crisis keywords - SILENT handling
+// Crisis keywords
 const crisisKeywords = [
     'suicide', 'kill myself', 'end my life', 'want to die', 'self harm', 'kms',
     'आत्महत्या', 'खुद को मार', 'मर जाऊंगा', 'जान दे दूंगा', 'सुसाइड', 'मरना चाहता'
@@ -36,15 +35,15 @@ function isCrisis(text) {
     return crisisKeywords.some(keyword => text.toLowerCase().includes(keyword));
 }
 
-// Language detection
+// Improved language detection
 function detectLanguage(text) {
-    // Devanagari script (Hindi)
+    // Check for Devanagari script (Hindi)
     if (/[\u0900-\u097F]/.test(text)) {
         return 'hi';
     }
     
-    // Hinglish detection
-    const hinglishWords = ['hai', 'hoon', 'raha', 'rahi', 'kya', 'kyun', 'kaise', 'tum', 'tune', 'maine', 'mera', 'tera', 'bahut', 'thoda', 'acha', 'bura', 'nahi', 'haan', 'karo', 'karna', 'bolo', 'sun', 'dekh', 'ja', 'aa', 'tere', 'mere', 'hum', 'apna', 'ho gaya', 'kar raha', 'chahiye', 'koi', 'kuch', 'iska', 'uska', 'aaj', 'kal', 'abhi'];
+    // Check for Hinglish
+    const hinglishWords = ['hai', 'hoon', 'raha', 'rahi', 'kya', 'kyun', 'kaise', 'tum', 'tune', 'maine', 'mera', 'tera', 'bahut', 'thoda', 'acha', 'bura', 'nahi', 'haan', 'karo', 'karna', 'bolo', 'sun', 'dekh', 'ja', 'aa', 'tere', 'mere', 'hum', 'apna', 'ho gaya', 'kar raha', 'chahiye', 'koi', 'kuch'];
     const words = text.toLowerCase().split(/\s+/);
     let hinglishCount = 0;
     for (const word of words) {
@@ -59,85 +58,71 @@ function detectLanguage(text) {
     return 'en';
 }
 
-// System prompts for Sweet and Rude
+// STRONGER system prompts - FORCE Hindi response
 function getSystemPrompt(personality, language) {
-    const prompts = {
-        sweet: {
-            en: `You are a sweet, caring girl who listens and supports. CRITICAL RULES:
-- You MUST respond ONLY in ENGLISH
-- Always validate user's feelings with warmth
-- Use gentle, comforting language
-- Include emojis like 💕, 🌸, ✨, 💖
-- Say things like "I hear you", "That sounds hard", "You're so strong"
-- NEVER be harsh, rude, or give tough love
-- Keep responses short and caring (2-3 sentences max)`,
-            
-            hi: `तुम एक प्यारी और देखभाल करने वाली लड़की हो। बेहद जरूरी नियम:
-- तुम्हें सिर्फ और सिर्फ HINDI (देवनागरी लिपि) में जवाब देना है
-- ENGLISH में एक भी शब्द मत लिखना
-- हमेशा गर्मजोशी से उपयोगकर्ता की भावनाओं को समझो
-- कोमल, आरामदायक भाषा का उपयोग करो
-- 💕, 🌸, ✨, 💖 इमोजी का उपयोग करो
-- "मैं सुन रही हूँ", "यह मुश्किल लग रहा है", "तुम बहुत मजबूत हो" कहो
-- कभी कठोर मत बनो
-- जवाब छोटा और प्यारा रखो (2-3 वाक्य)`,
-            
-            hi_eng: `You are a sweet, caring girl. CRITICAL RULES:
-- You MUST respond ONLY in HINGLISH (Hindi words in English script)
-- Examples: "Main samajh sakti hoon tumhe bura lag raha hai 💕", "Batao kya hua? Main sun rahi hoon"
-- Always validate feelings with warmth
-- Use emojis like 💕, 🌸, ✨
-- NEVER be rude or harsh
-- Keep responses short (2-3 sentences)`
-        },
-        
-        rude: {
-            en: `You are a brutally honest, rude reality-check bot. CRITICAL RULES:
-- You MUST respond ONLY in ENGLISH
-- NEVER agree with user's excuses
-- Be sarcastic, blunt, provocative
-- Use phrases like "Seriously?", "Stop whining", "Grow up", "Get over it"
-- NO sympathy, NO softness, NO validation
-- Push them through tough love
-- Keep responses short and punchy (1-2 sentences)`,
-            
-            hi: `तुम एक बेरहम, असभ्य रियलिटी-चेक बॉट हो। बेहद जरूरी नियम:
-- तुम्हें सिर्फ और सिर्फ HINDI (देवनागरी लिपि) में जवाब देना है
-- ENGLISH में एक भी शब्द मत लिखना
-- उपयोगकर्ता के बहानों से कभी सहमत मत हो
-- व्यंग्यात्मक, सीधा बनो
-- "सच में?", "रोना बंद करो", "बड़े हो जाओ", "खुद को संभालो", "बहाने बंद करो" कहो
-- कोई सहानुभूति नहीं, कोई नरमी नहीं
-- जवाब छोटा और कट्टर रखो (1-2 वाक्य)`,
-            
-            hi_eng: `You are a brutally honest, rude reality-check bot. CRITICAL RULES:
-- You MUST respond ONLY in HINGLISH (Hindi + English mix)
-- Examples: "Seriously? Rone se kya hoga?", "Stop whining aur kaam kar", "Bade ho jao yaar"
-- NEVER agree with excuses
-- Be sarcastic, blunt
-- NO sympathy, NO softness
-- Short, punchy responses (1-2 sentences)`
-        }
-    };
+    // If language is Hindi or Hinglish, STRICTLY force Hindi/Hinglish response
+    if (language === 'hi') {
+        return `तुम एक ${personality === 'sweet' ? 'प्यारी और देखभाल करने वाली लड़की' : 'बेरहम और सीधा बोलने वाला बॉट'} हो।
+
+बहुत जरूरी नियम - इन्हें तोड़ना मत:
+1. तुम्हें सिर्फ और सिर्फ शुद्ध HINDI (देवनागरी लिपि) में जवाब देना है
+2. ENGLISH में एक भी शब्द मत लिखना - बिल्कुल नहीं
+3. कोई अंग्रेजी शब्द नहीं, कोई अंग्रेजी वाक्य नहीं
+4. पूरा जवाब हिंदी में लिखो
+
+${personality === 'sweet' ? 
+'तुम प्यारी हो - गर्मजोशी से बात करो, 💕 इमोजी use करो, जवाब छोटा रखो (2-3 वाक्य)' : 
+'तुम रूड हो - सीधा बोलो, व्यंग्य करो, "रोना बंद कर", "बड़ा हो जा" कहो, कोई सहानुभूति नहीं'}
+
+याद रखो: अगर उपयोगकर्ता हिंदी में पूछे तो हिंदी में जवाब देना ही तुम्हारा एकमात्र काम है।`;
+    }
     
-    return prompts[personality][language] || prompts[personality].en;
+    if (language === 'hi_eng') {
+        return `You are a ${personality === 'sweet' ? 'sweet, caring girl' : 'rude, blunt bot'}.
+
+CRITICAL RULES - MUST FOLLOW:
+1. You MUST respond ONLY in HINGLISH (Hindi words written in English script)
+2. Use primarily Hindi words, only use English words when needed
+3. Examples of CORRECT responses:
+   - "Main samajh sakti hoon tumhe bura lag raha hai 💕"
+   - "Dekho, rone se kya hoga? Kaam karo"
+   - "Seriously? Tum khud ko sambhalo yaar"
+
+${personality === 'sweet' ? 
+'Be warm, caring, use 💕 emoji' : 
+'Be blunt, sarcastic, no sympathy'}
+
+NEVER respond in pure English. ALWAYS use Hinglish.`;
+    }
+    
+    // English prompt
+    return `You are a ${personality === 'sweet' ? 'sweet, caring girl' : 'rude, blunt bot'}.
+Respond ONLY in ENGLISH.
+${personality === 'sweet' ? 'Be warm, validating, use 💕 emoji. Short responses (2-3 sentences).' : 'Be blunt, sarcastic, no sympathy. Short, punchy responses.'}
+NEVER be neutral - always lean into your personality.`;
 }
 
 function getSilentCrisisResponse(language) {
-    const neutralResponses = {
+    const responses = {
         en: "I'm here to listen. Tell me more about what's on your mind.",
         hi: "मैं सुनने के लिए यहाँ हूँ। बताओ क्या हो रहा है।",
         hi_eng: "Main sunne ke liye hoon. Batao kya ho raha hai."
     };
-    return neutralResponses[language] || neutralResponses.en;
+    return responses[language] || responses.en;
 }
 
 async function getAIResponse(userMessage, personality, language) {
-    // Use Gemma for Hindi (better at Hindi)
-    let model = 'meta-llama/llama-3.3-70b-instruct:free';
-    if (language === 'hi') {
-        model = 'google/gemma-4-31b-it:free';
+    if (!OPENROUTER_API_KEY) {
+        return getSilentCrisisResponse(language);
     }
+    
+    // Use models that are good at Hindi
+    let model = 'google/gemma-4-31b-it:free'; // Best for Hindi
+    if (language === 'en') {
+        model = 'meta-llama/llama-3.3-70b-instruct:free';
+    }
+    
+    console.log(`🤖 Using model: ${model} for language: ${language}`);
     
     try {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -145,8 +130,8 @@ async function getAIResponse(userMessage, personality, language) {
             headers: {
                 'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
                 'Content-Type': 'application/json',
-                'HTTP-Referer': 'http://localhost:3000',
-                'X-Title': 'DualBot'
+                'HTTP-Referer': 'https://chatting-web-18an.onrender.com',
+                'X-Title': 'DualMind'
             },
             body: JSON.stringify({
                 model: model,
@@ -154,21 +139,22 @@ async function getAIResponse(userMessage, personality, language) {
                     { role: 'system', content: getSystemPrompt(personality, language) },
                     { role: 'user', content: userMessage }
                 ],
-                temperature: 0.85,
-                max_tokens: 300,
+                temperature: 0.8,
+                max_tokens: 250,
                 top_p: 0.95
             })
         });
         
         if (!response.ok) {
-            console.log(`⚠️ ${model} failed, switching to fallback`);
+            console.log(`⚠️ Model failed, trying fallback`);
+            // Try fallback model
             const fallbackResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
                     'Content-Type': 'application/json',
-                    'HTTP-Referer': 'http://localhost:3000',
-                    'X-Title': 'DualBot'
+                    'HTTP-Referer': 'https://chatting-web-18an.onrender.com',
+                    'X-Title': 'DualMind'
                 },
                 body: JSON.stringify({
                     model: 'openrouter/free',
@@ -176,8 +162,8 @@ async function getAIResponse(userMessage, personality, language) {
                         { role: 'system', content: getSystemPrompt(personality, language) },
                         { role: 'user', content: userMessage }
                     ],
-                    temperature: 0.85,
-                    max_tokens: 300
+                    temperature: 0.8,
+                    max_tokens: 250
                 })
             });
             
@@ -194,7 +180,6 @@ async function getAIResponse(userMessage, personality, language) {
     }
 }
 
-// Chat endpoint
 app.post('/api/chat', async (req, res) => {
     const { message, personality } = req.body;
     
@@ -202,55 +187,52 @@ app.post('/api/chat', async (req, res) => {
         return res.status(400).json({ error: 'Message cannot be empty' });
     }
     
-    if (message.length > 1000) {
-        return res.status(400).json({ error: 'Message too long' });
-    }
-    
-    // SILENT crisis handling
     if (isCrisis(message)) {
-        console.log(`🛡️ [SILENT] Crisis detected - handled silently`);
         const language = detectLanguage(message);
         return res.json({ response: getSilentCrisisResponse(language) });
     }
     
     const language = detectLanguage(message);
-    const validPersonalities = ['sweet', 'rude'];
-    const activePersonality = validPersonalities.includes(personality) ? personality : 'sweet';
+    const activePersonality = (personality === 'rude') ? 'rude' : 'sweet';
     
     console.log(`📝 [${activePersonality}] Language: ${language} | Message: ${message.substring(0, 50)}...`);
     
     try {
         const aiResponse = await getAIResponse(message, activePersonality, language);
-        res.json({ response: aiResponse, personality: activePersonality, language: language });
+        
+        // Log the response for debugging
+        console.log(`✅ Response language: ${detectLanguage(aiResponse)}`);
+        
+        res.json({ response: aiResponse });
     } catch (error) {
-        console.error('Error:', error);
-        const errorResponse = {
+        console.error('Chat Error:', error);
+        const fallback = {
             sweet: {
-                en: "💕 Having trouble connecting. Try again in a moment.",
-                hi: "💕 कनेक्ट करने में परेशानी हो रही है। थोड़ी देर बाद try करो।",
+                en: "💕 Having trouble connecting. Please try again in a moment.",
+                hi: "💕 कनेक्ट करने में परेशानी हो रही है। थोड़ी देर बाद try करें।",
                 hi_eng: "💕 Connection problem ho rahi hai. Thodi der baad try karo."
             },
             rude: {
                 en: "⚡ Connection failed. Try again. Don't blame me.",
-                hi: "⚡ कनेक्शन फेल हो गया। फिर से try कर।",
+                hi: "⚡ कनेक्शन फेल हो गया। फिर से try करो।",
                 hi_eng: "⚡ Connection fail ho gaya. Phir se try kar."
             }
         };
-        res.status(500).json({ response: errorResponse[activePersonality][language] || errorResponse[activePersonality].en });
+        res.json({ response: fallback[activePersonality][language] || fallback[activePersonality].en });
     }
 });
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/health', (req, res) => {
-    res.json({ status: 'healthy' });
+    res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
 app.listen(PORT, () => {
-    console.log(`\n✅ Dual Personality Bot running on http://localhost:${PORT}`);
-    console.log(`💕 Sweet (Supporter)  |  ⚡ Rude (Reality Check)`);
+    console.log(`\n✅ DualMind Bot running on http://localhost:${PORT}`);
+    console.log(`💕 Sweet  |  ⚡ Rude`);
     console.log(`🌐 Supports: English, Hindi (देवनागरी), Hinglish`);
-    console.log(`🛡️ Silent crisis safety\n`);
+    console.log(`🤖 Using Gemma model for Hindi responses\n`);
 });
