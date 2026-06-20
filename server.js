@@ -35,15 +35,15 @@ function isCrisis(text) {
     return crisisKeywords.some(keyword => text.toLowerCase().includes(keyword));
 }
 
-// Improved language detection
+// Language detection - IMPROVED
 function detectLanguage(text) {
-    // Check for Devanagari script (Hindi)
+    // Check for Devanagari script (Hindi) - STRONG detection
     if (/[\u0900-\u097F]/.test(text)) {
         return 'hi';
     }
     
-    // Check for Hinglish
-    const hinglishWords = ['hai', 'hoon', 'raha', 'rahi', 'kya', 'kyun', 'kaise', 'tum', 'tune', 'maine', 'mera', 'tera', 'bahut', 'thoda', 'acha', 'bura', 'nahi', 'haan', 'karo', 'karna', 'bolo', 'sun', 'dekh', 'ja', 'aa', 'tere', 'mere', 'hum', 'apna', 'ho gaya', 'kar raha', 'chahiye', 'koi', 'kuch'];
+    // Check for Hinglish - broader detection
+    const hinglishWords = ['hai', 'hoon', 'raha', 'rahi', 'kya', 'kyun', 'kaise', 'tum', 'tune', 'maine', 'mera', 'tera', 'bahut', 'thoda', 'acha', 'bura', 'nahi', 'haan', 'karo', 'karna', 'bolo', 'sun', 'dekh', 'ja', 'aa', 'tere', 'mere', 'hum', 'apna', 'ho gaya', 'kar raha', 'chahiye', 'koi', 'kuch', 'aaj', 'kal', 'abhi', 'yahan', 'wahan', 'kahan', 'sakta', 'sakti', 'raha hoon', 'rahi hoon', 'rahe ho', 'rahi ho', 'karunga', 'karungi', 'karenge', 'karega', 'karegi', 'kaam', 'bhai', 'yaar', 'na', 're', 'toh', 'kyonki', 'lekin', 'par', 'magar', 'agar', 'tab', 'warna', 'nahi', 'haan', 'ji', 'hmm'];
     const words = text.toLowerCase().split(/\s+/);
     let hinglishCount = 0;
     for (const word of words) {
@@ -58,48 +58,83 @@ function detectLanguage(text) {
     return 'en';
 }
 
-// STRONGER system prompts - FORCE Hindi response
+// Simple Hindi phrases for fallback
+function getHindiFallbackResponse(personality, userMessage) {
+    const sweetResponses = [
+        "💕 मैं सुन रही हूँ तुम्हें। बताओ क्या हुआ? मैं तुम्हारे साथ हूँ।",
+        "💕 तुम बहुत मजबूत हो। मुझे बताओ और क्या हो रहा है?",
+        "💕 मैं समझ सकती हूँ तुम कैसा महसूस कर रहे हो। सब ठीक हो जाएगा।",
+        "💕 तुम अकेले नहीं हो। मैं यहाँ हूँ तुम्हारे लिए। बताओ क्या परेशानी है?",
+        "💕 तुम्हारी भावनाएं जायज़ हैं। मुझे और बताओ।",
+        "💕 हर चीज़ का समाधान होता है। चलो मिलकर सोचते हैं।"
+    ];
+    
+    const rudeResponses = [
+        "⚡ रोना बंद करो और काम करो। दुनिया तुम्हारा इंतज़ार नहीं करेगी।",
+        "⚡ बहाने बंद करो। कुछ करो, नहीं तो कुछ नहीं बदलेगा।",
+        "⚡ सच में? तुमको लगता है रोने से कुछ होगा? उठो और काम करो।",
+        "⚡ खुद को संभालो। दुनिया में और भी बड़ी समस्याएं हैं।",
+        "⚡ बड़े हो जाओ। किसी और को दोष देना बंद करो।",
+        "⚡ सीधी बात - तुम कर सकते हो, लेकिन करना पड़ेगा। कोई और नहीं करेगा।"
+    ];
+    
+    const responses = personality === 'sweet' ? sweetResponses : rudeResponses;
+    return responses[Math.floor(Math.random() * responses.length)];
+}
+
+// Get Hinglish fallback
+function getHinglishFallbackResponse(personality, userMessage) {
+    const sweetResponses = [
+        "💕 Main sun rahi hoon tumhe. Batao kya hua? Main tumhare saath hoon.",
+        "💕 Tum bahut strong ho. Mujhe batao aur kya ho raha hai?",
+        "💕 Main samajh sakti hoon tum kaisa feel kar rahe ho. Sab theek ho jayega.",
+        "💕 Tum akele nahi ho. Main yahan hoon tumhare liye. Batao kya problem hai?",
+        "💕 Tumhari feelings valid hain. Mujhe aur batao.",
+        "💕 Har cheez ka solution hota hai. Chalo milkar sochte hain."
+    ];
+    
+    const rudeResponses = [
+        "⚡ Rona band karo aur kaam karo. Duniya tumhara wait nahi karegi.",
+        "⚡ Bahane band karo. Kuch karo, nahi toh kuch nahi badlega.",
+        "⚡ Seriously? Tumko lagta hai rone se kuch hoga? Utho aur kaam karo.",
+        "⚡ Khud ko sambhalo. Duniya mein aur bhi badi problems hain.",
+        "⚡ Bade ho jao. Kisi aur ko blame karna band karo.",
+        "⚡ Seedhi baat - tum kar sakte ho, lekin karna padega. Koi aur nahi karega."
+    ];
+    
+    const responses = personality === 'sweet' ? sweetResponses : rudeResponses;
+    return responses[Math.floor(Math.random() * responses.length)];
+}
+
+// System prompts - SIMPLIFIED and STRONGER
 function getSystemPrompt(personality, language) {
-    // If language is Hindi or Hinglish, STRICTLY force Hindi/Hinglish response
     if (language === 'hi') {
-        return `तुम एक ${personality === 'sweet' ? 'प्यारी और देखभाल करने वाली लड़की' : 'बेरहम और सीधा बोलने वाला बॉट'} हो।
+        return `तुम एक ${personality === 'sweet' ? 'प्यारी लड़की' : 'रूड बॉट'} हो।
 
-बहुत जरूरी नियम - इन्हें तोड़ना मत:
-1. तुम्हें सिर्फ और सिर्फ शुद्ध HINDI (देवनागरी लिपि) में जवाब देना है
-2. ENGLISH में एक भी शब्द मत लिखना - बिल्कुल नहीं
-3. कोई अंग्रेजी शब्द नहीं, कोई अंग्रेजी वाक्य नहीं
-4. पूरा जवाब हिंदी में लिखो
+महत्वपूर्ण नियम:
+- केवल HINDI में जवाब दो
+- कोई ENGLISH नहीं
+- छोटा जवाब (2-3 वाक्य)
+${personality === 'sweet' ? '- गर्मजोशी से, 💕 इमोजी के साथ' : '- सीधा, व्यंग्यात्मक, कोई सहानुभूति नहीं'}
 
-${personality === 'sweet' ? 
-'तुम प्यारी हो - गर्मजोशी से बात करो, 💕 इमोजी use करो, जवाब छोटा रखो (2-3 वाक्य)' : 
-'तुम रूड हो - सीधा बोलो, व्यंग्य करो, "रोना बंद कर", "बड़ा हो जा" कहो, कोई सहानुभूति नहीं'}
-
-याद रखो: अगर उपयोगकर्ता हिंदी में पूछे तो हिंदी में जवाब देना ही तुम्हारा एकमात्र काम है।`;
+याद रखो: हिंदी में ही जवाब देना है।`;
     }
     
     if (language === 'hi_eng') {
-        return `You are a ${personality === 'sweet' ? 'sweet, caring girl' : 'rude, blunt bot'}.
+        return `You are a ${personality === 'sweet' ? 'sweet girl' : 'rude bot'}.
 
-CRITICAL RULES - MUST FOLLOW:
-1. You MUST respond ONLY in HINGLISH (Hindi words written in English script)
-2. Use primarily Hindi words, only use English words when needed
-3. Examples of CORRECT responses:
-   - "Main samajh sakti hoon tumhe bura lag raha hai 💕"
-   - "Dekho, rone se kya hoga? Kaam karo"
-   - "Seriously? Tum khud ko sambhalo yaar"
+CRITICAL: Respond in HINGLISH only (Hindi + English mix).
+Examples: "Main samajh sakti hoon 💕", "Seriously? Rone se kya hoga?"
 
-${personality === 'sweet' ? 
-'Be warm, caring, use 💕 emoji' : 
-'Be blunt, sarcastic, no sympathy'}
-
-NEVER respond in pure English. ALWAYS use Hinglish.`;
+${personality === 'sweet' ? '- Be warm, use 💕' : '- Be blunt, sarcastic, no sympathy'}
+- Keep responses short (2-3 sentences)
+- Use Hinglish, NOT pure English`;
     }
     
-    // English prompt
     return `You are a ${personality === 'sweet' ? 'sweet, caring girl' : 'rude, blunt bot'}.
 Respond ONLY in ENGLISH.
-${personality === 'sweet' ? 'Be warm, validating, use 💕 emoji. Short responses (2-3 sentences).' : 'Be blunt, sarcastic, no sympathy. Short, punchy responses.'}
-NEVER be neutral - always lean into your personality.`;
+${personality === 'sweet' ? 'Be warm, validating, use 💕' : 'Be blunt, sarcastic, no sympathy'}
+Keep responses short (2-3 sentences).`;
 }
 
 function getSilentCrisisResponse(language) {
@@ -116,13 +151,13 @@ async function getAIResponse(userMessage, personality, language) {
         return getSilentCrisisResponse(language);
     }
     
-    // Use models that are good at Hindi
-    let model = 'google/gemma-4-31b-it:free'; // Best for Hindi
+    // Use Gemma for Hindi (it's better with Hindi)
+    let model = 'google/gemma-4-31b-it:free';
     if (language === 'en') {
         model = 'meta-llama/llama-3.3-70b-instruct:free';
     }
     
-    console.log(`🤖 Using model: ${model} for language: ${language}`);
+    console.log(`🤖 Model: ${model} for language: ${language}`);
     
     try {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -139,44 +174,52 @@ async function getAIResponse(userMessage, personality, language) {
                     { role: 'system', content: getSystemPrompt(personality, language) },
                     { role: 'user', content: userMessage }
                 ],
-                temperature: 0.8,
-                max_tokens: 250,
-                top_p: 0.95
+                temperature: 0.7,
+                max_tokens: 200,
+                top_p: 0.9
             })
         });
         
         if (!response.ok) {
-            console.log(`⚠️ Model failed, trying fallback`);
-            // Try fallback model
-            const fallbackResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://chatting-web-18an.onrender.com',
-                    'X-Title': 'DualMind'
-                },
-                body: JSON.stringify({
-                    model: 'openrouter/free',
-                    messages: [
-                        { role: 'system', content: getSystemPrompt(personality, language) },
-                        { role: 'user', content: userMessage }
-                    ],
-                    temperature: 0.8,
-                    max_tokens: 250
-                })
-            });
-            
-            const fallbackData = await fallbackResponse.json();
-            return fallbackData.choices[0].message.content;
+            console.log(`⚠️ API error: ${response.status}`);
+            // Fallback to local responses
+            if (language === 'hi') {
+                return getHindiFallbackResponse(personality, userMessage);
+            } else if (language === 'hi_eng') {
+                return getHinglishFallbackResponse(personality, userMessage);
+            }
+            return "I'm having trouble connecting. Please try again.";
         }
         
         const data = await response.json();
-        return data.choices[0].message.content;
+        let aiResponse = data.choices[0].message.content;
+        
+        // Check if response is in correct language
+        const responseLang = detectLanguage(aiResponse);
+        console.log(`📝 Response language detected: ${responseLang}`);
+        
+        // If Hindi was requested but response is in English, use fallback
+        if (language === 'hi' && responseLang !== 'hi') {
+            console.log('🔄 Response not in Hindi, using Hindi fallback');
+            return getHindiFallbackResponse(personality, userMessage);
+        }
+        
+        if (language === 'hi_eng' && responseLang === 'en') {
+            console.log('🔄 Response not in Hinglish, using Hinglish fallback');
+            return getHinglishFallbackResponse(personality, userMessage);
+        }
+        
+        return aiResponse;
         
     } catch (error) {
         console.error('API Error:', error);
-        throw error;
+        // Fallback responses
+        if (language === 'hi') {
+            return getHindiFallbackResponse(personality, userMessage);
+        } else if (language === 'hi_eng') {
+            return getHinglishFallbackResponse(personality, userMessage);
+        }
+        return "I'm having trouble connecting. Please try again.";
     }
 }
 
@@ -199,23 +242,20 @@ app.post('/api/chat', async (req, res) => {
     
     try {
         const aiResponse = await getAIResponse(message, activePersonality, language);
-        
-        // Log the response for debugging
-        console.log(`✅ Response language: ${detectLanguage(aiResponse)}`);
-        
         res.json({ response: aiResponse });
     } catch (error) {
         console.error('Chat Error:', error);
+        // Final fallback
         const fallback = {
             sweet: {
-                en: "💕 Having trouble connecting. Please try again in a moment.",
-                hi: "💕 कनेक्ट करने में परेशानी हो रही है। थोड़ी देर बाद try करें।",
-                hi_eng: "💕 Connection problem ho rahi hai. Thodi der baad try karo."
+                hi: "💕 मैं सुन रही हूँ। कुछ और बताओ?",
+                hi_eng: "💕 Main sun rahi hoon. Kuch aur batao?",
+                en: "💕 I'm listening. Tell me more?"
             },
             rude: {
-                en: "⚡ Connection failed. Try again. Don't blame me.",
-                hi: "⚡ कनेक्शन फेल हो गया। फिर से try करो।",
-                hi_eng: "⚡ Connection fail ho gaya. Phir se try kar."
+                hi: "⚡ क्या? फिर से बोलो।",
+                hi_eng: "⚡ Kya? Phir se bolo.",
+                en: "⚡ What? Say that again."
             }
         };
         res.json({ response: fallback[activePersonality][language] || fallback[activePersonality].en });
@@ -233,6 +273,6 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
     console.log(`\n✅ DualMind Bot running on http://localhost:${PORT}`);
     console.log(`💕 Sweet  |  ⚡ Rude`);
-    console.log(`🌐 Supports: English, Hindi (देवनागरी), Hinglish`);
-    console.log(`🤖 Using Gemma model for Hindi responses\n`);
+    console.log(`🌐 Supports: English, Hindi, Hinglish`);
+    console.log(`🔄 Hindi fallback enabled\n`);
 });
